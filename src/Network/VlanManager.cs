@@ -5,6 +5,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using UnityEngine;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace RackMedic.Network
 {
@@ -17,6 +18,8 @@ namespace RackMedic.Network
     /// </summary>
     public class VlanManager : MonoBehaviour
     {
+        public VlanManager(IntPtr ptr) : base(ptr) { }
+
         public static VlanManager Instance { get; private set; }
 
         private static string DataPath =>
@@ -59,6 +62,7 @@ namespace RackMedic.Network
         public void ClearVlan(string portKey) => SetVlan(portKey, 1);
 
         /// <summary>All ports that have a non-default VLAN assignment.</summary>
+        [HideFromIl2Cpp]
         public IReadOnlyDictionary<string, int> AllAssignments => _vlans;
 
         // ── Persistence ───────────────────────────────────────────────────────

@@ -14,6 +14,8 @@ namespace RackMedic.Workbench
     /// </summary>
     public class WorkbenchStation : MonoBehaviour
     {
+        public WorkbenchStation(IntPtr ptr) : base(ptr) { }
+
         // ── Singleton ─────────────────────────────────────────────────────────
         public static WorkbenchStation Instance { get; private set; }
 

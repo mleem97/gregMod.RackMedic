@@ -21,8 +21,9 @@ namespace RackMedic.Core
         private static PropertyInfo _eolTimeProp;
         private static PropertyInfo _isOnProp;
 
-        // StaticUIElements coin descriptor
-        private static PropertyInfo _coinsProp;
+        // Player.UpdateCoin overload (2- oder 3-parametrig je nach Spielversion)
+        private static MethodInfo _updateCoinMethod;
+        private static bool _updateCoinResolved;
 
         // ── Init ──────────────────────────────────────────────────────────────
 
@@ -37,15 +38,11 @@ namespace RackMedic.Core
             _eolTimeProp  = FindProp(tServer, "eolTime", "EolTime", "eoltime");
             _isOnProp     = FindProp(tServer, "isOn", "IsOn", "is_on");
 
-            var tUI = typeof(StaticUIElements);
-            _coinsProp = FindProp(tUI, "coins", "Coins", "coin");
-
             MelonLogger.Msg("[RackMedic][GameAccess] Resolved:" +
                 $" serverID={_serverIdProp?.Name ?? "null"}" +
                 $" eol={_eolProp?.Name ?? "null"}" +
                 $" eolTime={_eolTimeProp?.Name ?? "null"}" +
-                $" isOn={_isOnProp?.Name ?? "null"}" +
-                $" coins={_coinsProp?.Name ?? "null"}");
+                $" isOn={_isOnProp?.Name ?? "null"}");
         }
 
         private static PropertyInfo FindProp(Type type, params string[] names)
@@ -98,17 +95,18 @@ namespace RackMedic.Core
             }
         }
 
-        // ── StaticUIElements coin access ──────────────────────────────────────
+        // ── Geld:Single Source of Truth ist Player.money ─────────────────────────
+        // (nicht StaticUIElements.coins per Reflection beschreiben — das umgeht
+        //  UpdateCoin, NoCostShop-Hooks, Sounds und desynchronisiert die Shops).
 
         public static int GetCoins()
         {
             Init();
             try
             {
-                var ui = UnityEngine.Object.FindObjectOfType<StaticUIElements>();
-                if (ui == null) return 0;
-                var v = _coinsProp?.GetValue(ui);
-                return v == null ? 0 : Convert.ToInt32(v);
+                var player = PlayerManager.instance?.playerClass;
+                if (player == null) return 0;
+                return (int)player.money;
             }
             catch { return 0; }
         }
@@ -118,19 +116,46 @@ namespace RackMedic.Core
             Init();
             try
             {
-                var ui = UnityEngine.Object.FindObjectOfType<StaticUIElements>();
-                if (ui == null) return false;
-                var v = _coinsProp?.GetValue(ui);
-                int current = v == null ? 0 : Convert.ToInt32(v);
-                if (current < amount) return false;
-                _coinsProp?.SetValue(ui, Convert.ChangeType(current - amount, _coinsProp.PropertyType));
-                return true;
+                var player = PlayerManager.instance?.playerClass;
+                if (player == null) return false;
+                if ((int)player.money < amount) return false;
+                return InvokeUpdateCoin(player, -(float)amount);
             }
             catch (Exception ex)
             {
                 MelonLogger.Warning($"[RackMedic] SpendCoins failed: {ex.Message}");
                 return false;
             }
+        }
+
+        private static bool InvokeUpdateCoin(Player player, float delta)
+        {
+            if (!_updateCoinResolved)
+            {
+                _updateCoinResolved = true;
+                try
+                {
+                    foreach (var m in typeof(Player).GetMethods(
+                        BindingFlags.Instance | BindingFlags.Public))
+                    {
+                        if (m.Name != nameof(Player.UpdateCoin)) continue;
+                        int n = m.GetParameters().Length;
+                        if (n == 3) { _updateCoinMethod = m; break; }
+                        if (n == 2 && _updateCoinMethod == null) _updateCoinMethod = m;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MelonLogger.Warning($"[RackMedic] UpdateCoin lookup failed: {ex.Message}");
+                }
+            }
+
+            if (_updateCoinMethod == null) return false;
+            int count = _updateCoinMethod.GetParameters().Length;
+            object result = count == 3
+                ? _updateCoinMethod.Invoke(player, new object[] { delta, false, false })
+                : _updateCoinMethod.Invoke(player, new object[] { delta, false });
+            return result is bool ok && ok;
         }
 
         // ── TechnicianManager helpers ─────────────────────────────────────────

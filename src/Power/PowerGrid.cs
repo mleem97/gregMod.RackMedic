@@ -4,6 +4,7 @@ using System.Linq;
 using MelonLoader;
 using UnityEngine;
 using RackMedic.Core;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace RackMedic.Power
 {
@@ -16,6 +17,8 @@ namespace RackMedic.Power
     /// </summary>
     public class PowerGrid : MonoBehaviour
     {
+        public PowerGrid(IntPtr ptr) : base(ptr) { }
+
         public static PowerGrid Instance { get; private set; }
 
         // Default circuit capacity in watts (will be configurable via preferences later)
@@ -38,7 +41,13 @@ namespace RackMedic.Power
         {
             // Check power balance every ~5 real seconds
             if (Time.frameCount % 300 == 0)
-                CheckPowerBalance();
+            {
+                try { CheckPowerBalance(); }
+                catch (System.Exception ex)
+                {
+                    MelonLogger.Warning($"[RackMedic] Power check failed: {ex.Message}");
+                }
+            }
         }
 
         // ── Public API ────────────────────────────────────────────────────────
@@ -56,12 +65,14 @@ namespace RackMedic.Power
         }
 
         /// <summary>Assign a server to a named circuit.</summary>
+        [HideFromIl2Cpp]
         public void AssignToCircuit(string serverId, string circuitId)
         {
             _serverCircuit[serverId] = circuitId;
         }
 
         /// <summary>Set or override capacity for a named circuit.</summary>
+        [HideFromIl2Cpp]
         public void SetCircuitCapacity(string circuitId, float watts)
         {
             _circuitCapacity[circuitId] = watts;

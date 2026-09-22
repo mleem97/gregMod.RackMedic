@@ -40,15 +40,16 @@ namespace RackMedic
         {
             Instance = this;
 
-            // Register all MonoBehaviour subclasses with the IL2Cpp domain
-            ClassInjector.RegisterTypeInIl2Cpp<ComponentStore>();
-            ClassInjector.RegisterTypeInIl2Cpp<FailureEngine>();
-            ClassInjector.RegisterTypeInIl2Cpp<ShopScreen>();
-            ClassInjector.RegisterTypeInIl2Cpp<ModShopIntegration>();
-            ClassInjector.RegisterTypeInIl2Cpp<WorkbenchUI>();
-            ClassInjector.RegisterTypeInIl2Cpp<WorkbenchStation>();
-            ClassInjector.RegisterTypeInIl2Cpp<VlanManager>();
-            ClassInjector.RegisterTypeInIl2Cpp<PowerGrid>();
+            // Register all MonoBehaviour subclasses with the IL2CPP domain.
+            // Per-type try/catch: one bad type must not abort the whole init.
+            RegisterIl2CppType<ComponentStore>();
+            RegisterIl2CppType<FailureEngine>();
+            RegisterIl2CppType<ShopScreen>();
+            RegisterIl2CppType<ModShopIntegration>();
+            RegisterIl2CppType<WorkbenchUI>();
+            RegisterIl2CppType<WorkbenchStation>();
+            RegisterIl2CppType<VlanManager>();
+            RegisterIl2CppType<PowerGrid>();
 
             // Preferences
             _prefs = MelonPreferences.CreateCategory("RackMedic");
@@ -92,6 +93,15 @@ namespace RackMedic
         public override void OnDeinitializeMelon()
         {
             _harmony?.UnpatchSelf();
+        }
+
+        private static void RegisterIl2CppType<T>() where T : MonoBehaviour
+        {
+            try { ClassInjector.RegisterTypeInIl2Cpp<T>(); }
+            catch (System.Exception ex)
+            {
+                MelonLogger.Error($"[RackMedic] Type registration failed for {typeof(T).Name}: {ex.GetBaseException().Message}");
+            }
         }
 
         public static void RefreshKeys()

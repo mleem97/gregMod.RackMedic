@@ -19,11 +19,14 @@ namespace RackMedic.Shop
     /// </summary>
     public class ModShopIntegration : MonoBehaviour
     {
+        public ModShopIntegration(IntPtr ptr) : base(ptr) { }
+
         public static ModShopIntegration Instance { get; private set; }
 
         // Map from modID (int) → our catalog item ID (string), populated when
         // we inject items into the shop.
         private static readonly Dictionary<int, string> _modIdToItemId = new();
+        private static int _lastInjectedLoaderInstanceId = int.MinValue;
 
         private void Awake() { Instance = this; }
 
@@ -43,6 +46,19 @@ namespace RackMedic.Shop
                     MelonLogger.Warning("[RackMedic] ModLoader.instance is null – skipping shop injection.");
                     return;
                 }
+
+                // ModLoader.Start can be observed more than once during the
+                // current game's UI/bootstrap sequence. Re-registering the
+                // same 25 cards duplicates the native shop content and causes
+                // its layout to grow a second time.
+                int loaderInstanceId = loader.GetInstanceID();
+                if (_lastInjectedLoaderInstanceId == loaderInstanceId)
+                {
+                    MelonLogger.Msg("[RackMedic] Shop already injected for this ModLoader instance; skipping duplicate injection.");
+                    return;
+                }
+
+                _lastInjectedLoaderInstanceId = loaderInstanceId;
 
                 _modIdToItemId.Clear();
                 int modId = loader.nextModID; // start after any mods loaded before us
@@ -130,13 +146,29 @@ namespace RackMedic.Shop
         [HarmonyPostfix]
         static void PostfixModLoaderStart()
         {
-            MelonLoader.MelonCoroutines.Start(InjectNextFrame());
+            try
+            {
+                MelonLoader.MelonCoroutines.Start(InjectNextFrame());
+            }
+            catch (System.Exception ex)
+            {
+                MelonLoader.MelonLogger.Error($"[RackMedic] Shop inject failed: {ex.GetBaseException().Message}");
+            }
         }
 
         private static System.Collections.IEnumerator InjectNextFrame()
         {
             yield return null; // wait one frame
-            ModShopIntegration.InjectItems();
+            try
+            {
+                ModShopIntegration.InjectItems();
+            }
+            catch (System.Exception ex)
+            {
+                // Unbehandelt wuerde die Coroutine kommentarlos sterben —
+                // lieber loggen, damit der Shop-Inject sichtbar bleibt.
+                MelonLoader.MelonLogger.Error($"[RackMedic] Shop inject failed: {ex.GetBaseException().Message}");
+            }
         }
 
         /// <summary>When a ModShopItem buy button is clicked, note it for inventory tracking.</summary>
@@ -144,7 +176,15 @@ namespace RackMedic.Shop
         [HarmonyPrefix]
         static void PrefixButtonBuyItem(ModShopItem __instance)
         {
-            ModShopIntegration.OnModItemBuyClicked(__instance.modID);
+            try
+            {
+                if (__instance == null) return;
+                ModShopIntegration.OnModItemBuyClicked(__instance.modID);
+            }
+            catch (System.Exception ex)
+            {
+                MelonLoader.MelonLogger.Warning($"[RackMedic] Buy-click track failed: {ex.GetBaseException().Message}");
+            }
         }
     }
 }

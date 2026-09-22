@@ -6,6 +6,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using RackMedic.Core;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace RackMedic.Shop
 {
@@ -18,6 +19,8 @@ namespace RackMedic.Shop
     /// </summary>
     public class ShopScreen : MonoBehaviour
     {
+        public ShopScreen(IntPtr ptr) : base(ptr) { }
+
         // ── Singleton ─────────────────────────────────────────────────────────
         public static ShopScreen Instance { get; private set; }
 
@@ -283,6 +286,7 @@ namespace RackMedic.Shop
             GUI.EndScrollView();
         }
 
+        [HideFromIl2Cpp]
         private void DrawCard(Rect r, ShopItem item)
         {
             // Card background
@@ -676,6 +680,7 @@ namespace RackMedic.Shop
 
         // ── Buy logic ─────────────────────────────────────────────────────────
 
+        [HideFromIl2Cpp]
         private void TryBuyItem(ShopItem item)
         {
             int currentCoins = GetCoins();
@@ -708,6 +713,7 @@ namespace RackMedic.Shop
 
         // ── Open / Close ──────────────────────────────────────────────────────
 
+        [HideFromIl2Cpp]
         public void Open()
         {
             _open       = true;
@@ -886,7 +892,7 @@ namespace RackMedic.Shop
 
             // Sidebar styles
             var sidebarNormBg = MakeTex(2, 2, new Color(0.14f, 0.14f, 0.17f));
-            var sidebarActBg  = MakeTex(2, 2, new Color(0.20f, 0.36f, 0.62f));
+            var sidebarActBg  = MakeTex(2, 2, new Color(0.04f, 0.64f, 0.75f));
             var sidebarHovBg  = MakeTex(2, 2, new Color(0.20f, 0.20f, 0.26f));
             UnityEngine.Object.DontDestroyOnLoad(sidebarNormBg);
             UnityEngine.Object.DontDestroyOnLoad(sidebarActBg);
@@ -913,9 +919,9 @@ namespace RackMedic.Shop
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 padding   = sidePad,
-                normal    = { background = sidebarActBg, textColor = Color.white },
+                normal    = { background = sidebarActBg, textColor = new Color(0.02f, 0.07f, 0.12f) },
                 hover     = { background = sidebarHovBg, textColor = Color.white },
-                active    = { background = sidebarActBg, textColor = Color.white },
+                active    = { background = sidebarActBg, textColor = new Color(0.02f, 0.07f, 0.12f) },
             };
 
             _stylesReady = true;

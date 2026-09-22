@@ -5,6 +5,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using RackMedic.Core;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace RackMedic.Workbench
 {
@@ -16,6 +17,8 @@ namespace RackMedic.Workbench
     /// </summary>
     public class WorkbenchUI : MonoBehaviour
     {
+        public WorkbenchUI(IntPtr ptr) : base(ptr) { }
+
         // ── Mode ──────────────────────────────────────────────────────────────
         private enum WorkbenchMode { Picker, Detail }
         private WorkbenchMode _mode = WorkbenchMode.Detail;
@@ -176,6 +179,7 @@ namespace RackMedic.Workbench
 
         }
 
+        [HideFromIl2Cpp]
         private void DrawSlotList(Rect area, ServerProfile profile)
         {
             BuildSlotList(profile);
@@ -198,6 +202,7 @@ namespace RackMedic.Workbench
             GUI.EndScrollView();
         }
 
+        [HideFromIl2Cpp]
         private void DrawSlotRow(int index, string name, ComponentSlot slot, bool selected, float width)
         {
             float rowY = index * 52f;
@@ -250,6 +255,7 @@ namespace RackMedic.Workbench
             }
         }
 
+        [HideFromIl2Cpp]
         private void DrawSlotDetail(Rect area, ServerProfile profile)
         {
             GUI.Label(new Rect(area.x, area.y, area.width, 20f), "SLOT DETAIL", _headerStyle);
@@ -346,6 +352,7 @@ namespace RackMedic.Workbench
 
         // ── Install / Remove logic ─────────────────────────────────────────────
 
+        [HideFromIl2Cpp]
         private void RemoveComponent(ServerProfile profile, int slotIndex)
         {
             var (name, slot) = _slots[slotIndex];
@@ -364,6 +371,7 @@ namespace RackMedic.Workbench
             MelonLogger.Msg($"[RackMedic] Removed {defId} from {name} on {profile.ServerId}");
         }
 
+        [HideFromIl2Cpp]
         private void InstallComponent(ServerProfile profile, int slotIndex, string defId)
         {
             var (name, slot) = _slots[slotIndex];
@@ -391,8 +399,10 @@ namespace RackMedic.Workbench
 
         // ── Slot list building ────────────────────────────────────────────────
 
+        [HideFromIl2Cpp]
         private void BuildSlotList(ServerProfile profile) => RebuildSlots(profile);
 
+        [HideFromIl2Cpp]
         private void RebuildSlots(ServerProfile profile)
         {
             _slots.Clear();
@@ -408,6 +418,7 @@ namespace RackMedic.Workbench
             _slots.Add(("Cooling", profile.Cooling));
         }
 
+        [HideFromIl2Cpp]
         private List<(string id, int count)> GetCompatibleInventory(string slotName)
         {
             var result = new List<(string id, int count)>();
@@ -497,6 +508,7 @@ namespace RackMedic.Workbench
             Open(foundId, ComponentStore.Instance.Get(foundId));
         }
 
+        [HideFromIl2Cpp]
         private void Open(string serverId, ServerProfile profile)
         {
             if (profile == null) return;
@@ -516,12 +528,14 @@ namespace RackMedic.Workbench
             _reenableNextFrame = true;
         }
 
+        [HideFromIl2Cpp]
         public void OpenForServer(string serverId)
         {
             var profile = ComponentStore.Instance?.Get(serverId);
             if (profile != null) Open(serverId, profile);
         }
 
+        [HideFromIl2Cpp]
         public void OpenServerPicker()
         {
             _mode = WorkbenchMode.Picker;

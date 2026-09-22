@@ -3,6 +3,7 @@ using System.Collections;
 using Il2Cpp;
 using MelonLoader;
 using UnityEngine;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace RackMedic.Core
 {
@@ -13,6 +14,8 @@ namespace RackMedic.Core
     /// </summary>
     public class FailureEngine : MonoBehaviour
     {
+        public FailureEngine(IntPtr ptr) : base(ptr) { }
+
         public static FailureEngine Instance { get; private set; }
 
         private ComponentStore _store;
@@ -35,6 +38,7 @@ namespace RackMedic.Core
         /// Register a game Server with RackMedic. Sets up a default profile and
         /// sets the game's EOL fields so the native EOL system never fires.
         /// </summary>
+        [HideFromIl2Cpp]
         public ServerProfile RegisterServer(Server server, string chassisId = "chassis_2u")
         {
             string sid = GameAccess.GetServerId(server);
@@ -52,6 +56,7 @@ namespace RackMedic.Core
 
         // ── Coroutine: periodic failure tick ─────────────────────────────────
 
+        [HideFromIl2Cpp]
         private IEnumerator FailureTick()
         {
             // Wait a bit for the game world to settle
@@ -124,6 +129,7 @@ namespace RackMedic.Core
         }
 
         /// <summary>Returns true if the slot's health changed this tick.</summary>
+        [HideFromIl2Cpp]
         private bool DegradeSlot(ComponentSlot slot, float deltaHours, float coolingMult,
                                   float minFailureHours, string sid, string slotName)
         {
@@ -155,6 +161,7 @@ namespace RackMedic.Core
             return true;
         }
 
+        [HideFromIl2Cpp]
         private void EvaluateServerHealth(Server server, ServerProfile profile, string sid)
         {
             if (profile.HasAnyCriticalFailure)
@@ -182,6 +189,7 @@ namespace RackMedic.Core
 
         // ── Public: force-evaluate a server after workbench repair ─────────
 
+        [HideFromIl2Cpp]
         public void ReevaluateServer(string serverId)
         {
             if (_store == null) return;

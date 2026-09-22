@@ -5,6 +5,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using UnityEngine;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace RackMedic.Core
 {
@@ -14,6 +15,8 @@ namespace RackMedic.Core
     /// </summary>
     public class ComponentStore : MonoBehaviour
     {
+        public ComponentStore(IntPtr ptr) : base(ptr) { }
+
         public static ComponentStore Instance { get; private set; }
 
         // ── Paths ─────────────────────────────────────────────────────────
@@ -23,9 +26,11 @@ namespace RackMedic.Core
 
         // ── Data ──────────────────────────────────────────────────────────
         // serverId → profile  (only servers registered with RackMedic)
+        [HideFromIl2Cpp]
         public Dictionary<string, ServerProfile> Profiles { get; private set; } = new();
 
         // componentDefId → count owned
+        [HideFromIl2Cpp]
         public Dictionary<string, int> Inventory { get; private set; } = new();
 
         // ── Unity lifecycle ────────────────────────────────────────────────
@@ -41,6 +46,7 @@ namespace RackMedic.Core
         public bool IsManaged(string serverId)
             => !string.IsNullOrEmpty(serverId) && Profiles.ContainsKey(serverId);
 
+        [HideFromIl2Cpp]
         public ServerProfile GetOrCreate(string serverId, string chassisId = "chassis_2u")
         {
             if (Profiles.TryGetValue(serverId, out var existing))
@@ -53,6 +59,7 @@ namespace RackMedic.Core
             return profile;
         }
 
+        [HideFromIl2Cpp]
         public ServerProfile Get(string serverId)
         {
             Profiles.TryGetValue(serverId, out var p);
